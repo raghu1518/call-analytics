@@ -149,23 +149,23 @@ title: Call Analytics Documentation
 
     /* --- Content Card --- */
     .content-card {
-      background: #ffffff; /* Explicit White */
+      background: #ffffff;
       border-radius: 16px;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
       border: 1px solid var(--border);
     }
 
-    /* --- MARKDOWN OVERRIDES (The Fixes) --- */
+    /* --- MARKDOWN OVERRIDES --- */
     .markdown-body {
       padding: 48px 64px;
       font-family: 'Inter', sans-serif;
       font-size: 16px;
-      color: #1f2937; /* Dark gray for high contrast */
-      background-color: #ffffff !important; /* Force White Background */
+      color: #1f2937;
+      background-color: #ffffff !important;
     }
 
-    /* --- BETTER TABLE STYLING --- */
+    /* --- TABLE STYLING --- */
     .markdown-body table {
       display: table;
       width: 100%;
@@ -178,7 +178,7 @@ title: Call Analytics Documentation
     }
     
     .markdown-body th {
-      background-color: #f9fafb; /* Light gray header */
+      background-color: #f9fafb;
       font-weight: 600;
       text-align: left;
       padding: 12px 16px;
@@ -197,28 +197,15 @@ title: Call Analytics Documentation
     }
     
     .markdown-body tr:hover td {
-        background-color: #f8fafc; /* Subtle hover effect */
+        background-color: #f8fafc;
     }
 
-    /* General Markdown Fixes */
-    .markdown-body pre {
-      background-color: #f8fafc;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-
-    .markdown-body h1, .markdown-body h2 {
-      border-bottom-color: var(--border);
-      padding-bottom: 0.5em;
-    }
-    
-    .markdown-body a {
-      color: var(--primary);
-      text-decoration: none;
-    }
-    
-    .markdown-body a:hover {
-        text-decoration: underline;
+    /* --- MERMAID DIAGRAM STYLING --- */
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 30px 0;
+      background: white;
     }
 
     /* --- Footer --- */
@@ -232,13 +219,7 @@ title: Call Analytics Documentation
     @media (max-width: 768px) {
       .hero h1 { font-size: 1.8rem; }
       .markdown-body { padding: 24px 20px; }
-      
-      /* Scrollable tables on mobile */
-      .markdown-body table {
-          display: block;
-          overflow-x: auto;
-          white-space: nowrap;
-      }
+      .markdown-body table { display: block; overflow-x: auto; white-space: nowrap; }
     }
   </style>
 </head>
@@ -288,6 +269,32 @@ title: Call Analytics Documentation
       &copy; {{ site.time | date: '%Y' }} Call Analytics Project
     </footer>
   </main>
+
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+
+    // 1. Initialize Mermaid
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+    // 2. Find all code blocks that GitHub Pages rendered as language-mermaid
+    const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid');
+
+    // 3. Transform them into divs that Mermaid can process
+    mermaidBlocks.forEach(async (block, index) => {
+        const graphDefinition = block.textContent;
+        const newDiv = document.createElement('div');
+        newDiv.classList.add('mermaid');
+        newDiv.textContent = graphDefinition;
+        
+        // Replace the <pre> tag with our new <div>
+        block.parentElement.replaceWith(newDiv);
+    });
+
+    // 4. Trigger Mermaid to render the diagrams
+    await mermaid.run({
+      querySelector: '.mermaid',
+    });
+  </script>
 
 </body>
 </html>
