@@ -1,0 +1,7 @@
+title: Call Analytics Documentation
+description: Deployment and integration guide for the Call Analytics platform.
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+theme: jekyll-theme-primer

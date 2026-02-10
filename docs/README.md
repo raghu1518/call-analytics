@@ -11,7 +11,7 @@ It supports:
 - Automated deployment scripts for Linux and Windows
 
 Companion Word guide:
-- `docs/Call_Analytics_Implementation_Guide.docx`
+- `./Call_Analytics_Implementation_Guide.docx`
 
 ## Table of Contents
 - [1. Product Overview](#1-product-overview)
@@ -146,7 +146,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 ```
 
 Detailed deploy automation reference:
-- `deploy/README.md`
+- `https://github.com/raghu1518/call-analytics/blob/main/deploy/README.md`
 
 ### 6.1 Create virtual environment
 ```powershell
@@ -988,7 +988,7 @@ sudo ./deploy/linux/uninstall.sh
 The repository includes one-command automated install/uninstall for both OS families.
 
 Reference:
-- `deploy/README.md`
+- `https://github.com/raghu1518/call-analytics/blob/main/deploy/README.md`
 
 Included scripts:
 - Linux:
