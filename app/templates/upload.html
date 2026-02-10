@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block page_title %}Upload Call{% endblock %}
+{% block content %}
+<section class="upload-shell reveal">
+  <header class="upload-head">
+    <p class="eyebrow">Ingestion</p>
+    <h1>Drop audio and launch analysis.</h1>
+    <p>Configure STT model, diarization, and prompt context before queueing the call.</p>
+  </header>
+
+  <form class="upload-form panel" action="/upload" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label class="drop">
+      <input class="drop__input" type="file" name="file" data-file-input required accept=".wav,.mp3,.m4a" />
+      <span class="drop__title">Choose file or drag here</span>
+      <span class="drop__hint">Supported formats: WAV, MP3, M4A</span>
+      <span class="drop__file" data-file-name>No file selected</span>
+    </label>
+
+    <div class="upload-grid">
+      <label>
+        <span>Language code</span>
+        <input type="text" name="language_code" value="{{ defaults.language_code }}" placeholder="en-IN" />
+      </label>
+      <label>
+        <span>STT model</span>
+        <input type="text" name="stt_model" value="{{ defaults.stt_model }}" />
+      </label>
+      <label>
+        <span>Prompt pack</span>
+        <select name="prompt_pack">
+          {% for pack in defaults.prompt_packs %}
+          <option value="{{ pack.value }}" {% if pack.value == defaults.prompt_pack %}selected{% endif %}>{{ pack.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Speaker count (optional)</span>
+        <input type="number" name="num_speakers" min="1" placeholder="Auto detect" />
+      </label>
+      <label class="check">
+        <input type="checkbox" name="with_diarization" checked />
+        <span>Enable diarization</span>
+      </label>
+    </div>
+
+    <label>
+      <span>Context prompt</span>
+      <textarea name="prompt" rows="4" placeholder="Provide context for better summarization and QA extraction."></textarea>
+    </label>
+
+    <label>
+      <span>Glossary terms</span>
+      <textarea name="glossary_terms" rows="3" placeholder="Comma-separated terms (policy renewal, escalation, refund)"></textarea>
+    </label>
+
+    <div class="upload-actions">
+      <button type="submit" class="btn btn--primary">Start Analysis</button>
+      <a href="/" class="btn btn--ghost">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

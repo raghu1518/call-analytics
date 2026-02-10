@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+{% block page_title %}Conversation Workspace{% endblock %}
+{% block content %}
+<section
+  id="timeline"
+  class="panel timeline-card reveal"
+  data-call-experience
+  data-call-id="{{ call.id }}"
+  data-created-at="{{ call_experience.recording_start_iso|default:'' }}"
+  data-duration="{{ call_experience.duration_seconds|default:'0' }}"
+>
+  <div class="panel__head player-head">
+    <div>
+      <h2>Audio Player</h2>
+      <p>Waveform, emotion timeline, and event navigation.</p>
+    </div>
+    <span class="status status--{{ call.status }}">{{ call.status }}</span>
+  </div>
+
+  <div class="timeline-meta">
+    <div>
+      <h3>Recording Start Time</h3>
+      <p>{{ call_experience.recording_start_display|default:"--" }}</p>
+    </div>
+    <div>
+      <h3>Progress</h3>
+      <p><span data-progress-readout>⏱️ 00:00 / 00:00</span></p>
+    </div>
+    <div>
+      <h3>Recording End Time</h3>
+      <p data-recording-end>{{ call_experience.recording_end_display|default:"--" }}</p>
+    </div>
+  </div>
+
+  <div class="waveform-wrap">
+    <canvas data-wave-canvas height="120"></canvas>
+    <div class="wave-overlay" data-wave-overlay>
+      <span class="wave-playhead" data-wave-playhead></span>
+    </div>
+    <div class="emotion-track" data-emotion-track aria-label="Emotion timeline"></div>
+  </div>
+
+  <div class="emotion-legend" data-emotion-legend></div>
+
+  <div class="wave-controls">
+    <button type="button" class="btn btn--primary" data-wave-play>▶️ Play</button>
+    <label>
+      <span>🔊 Speed</span>
+      <select data-speed-select>
+        <option value="0.75">0.75x</option>
+        <option value="1" selected>1x</option>
+        <option value="1.25">1.25x</option>
+        <option value="1.5">1.5x</option>
+        <option value="2">2x</option>
+      </select>
+    </label>
+    <span class="muted">🎧 Playback <strong data-playback-time>00:00</strong></span>
+    <span class="muted shortcut-hint">⌨️ Shortcuts: Space/K play, J/L seek, N annotate</span>
+  </div>
+
+  <div class="annotation-row">
+    <input type="text" data-annotation-input placeholder="📝 Add annotation..." />
+    <button type="button" class="btn btn--ghost" data-annotation-add>📝 Annotate</button>
+  </div>
+  <ul class="annotation-list" data-annotation-list></ul>
+
+  <audio
+    class="audio__player sr-only"
+    controls
+    preload="metadata"
+    data-live-audio-src="/api/realtime/calls/{{ call.id }}/audio"
+    data-live-audio-meta="/api/realtime/calls/{{ call.id }}/audio/meta"
+  >
+    <source src="/api/realtime/calls/{{ call.id }}/audio?fallback=1" />
+  </audio>
+
+  {% if call.error_message %}
+  <p class="alert">{{ call.error_message }}</p>
+  {% endif %}
+</section>
+
+<section class="mini-player" data-mini-player aria-label="Sticky mini player">
+  <button type="button" class="btn btn--primary mini-player__play" data-mini-play>▶️</button>
+  <button type="button" class="btn btn--ghost mini-player__jump" data-mini-back title="Back 10 seconds">⏪ 10s</button>
+  <div class="mini-player__meta">
+    <strong data-mini-title>{{ call.filename }}</strong>
+    <span data-mini-time>00:00 / 00:00</span>
+  </div>
+  <label class="mini-player__speed">
+    <span>Speed</span>
+    <select data-mini-speed>
+      <option value="0.75">0.75x</option>
+      <option value="1" selected>1x</option>
+      <option value="1.25">1.25x</option>
+      <option value="1.5">1.5x</option>
+      <option value="2">2x</option>
+    </select>
+  </label>
+  <button type="button" class="btn btn--ghost mini-player__jump" data-mini-forward title="Forward 10 seconds">⏩ 10s</button>
+</section>
+
+<section class="panel realtime-alerts reveal" data-supervisor-alerts data-call-id="{{ call.id }}">
+  <div class="panel__head realtime-alerts__head">
+    <div>
+      <h2>Supervisor Alerts</h2>
+      <p>Live escalation and risk notifications from cloud events.</p>
+    </div>
+    <span class="status status--processing" data-alert-connection>streaming...</span>
+  </div>
+  <div class="realtime-alerts__meta">
+    <div class="realtime-risk">
+      <span>Risk Score</span>
+      <strong data-risk-score>0.00</strong>
+    </div>
+    <div class="realtime-risk">
+      <span>Sentiment</span>
+      <strong data-live-sentiment>0.00</strong>
+    </div>
+  </div>
+  <ul class="realtime-alerts__list" data-alert-list>
+    <li class="muted">Waiting for realtime cloud events.</li>
+  </ul>
+</section>
+
+<section class="panel detail-head reveal">
+  <div>
+    <p class="eyebrow">Call Record</p>
+    <h1>{{ call.filename }}</h1>
+    <p class="mono">{{ call.id }}</p>
+  </div>
+  <div class="detail-head__actions">
+    <div class="action-row">
+      <a class="btn btn--ghost" href="/calls/{{ call.id }}/export?format=json&scope=insights">Export JSON</a>
+      <a class="btn btn--ghost" href="/calls/{{ call.id }}/export?format=csv&scope=insights">Export CSV</a>
+      <a class="btn btn--ghost" href="/calls/{{ call.id }}/export?format=csv&scope=transcript">Transcript CSV</a>
+      <form action="/calls/bulk" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="reprocess" />
+        <input type="hidden" name="call_ids" value="{{ call.id }}" />
+        <button class="btn btn--ghost" type="submit">Reprocess</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<nav class="experience-tabs reveal" aria-label="Detail views">
+  <a href="#timeline">Audio Player</a>
+  <a href="#details">Details</a>
+  <a href="#quality">Quality Summary</a>
+  <a href="#transcript">Transcript &amp; AI Insights</a>
+  <a href="#audit">Audit Trail</a>
+</nav>
+
+<section id="details" class="split reveal">
+  <article class="panel">
+    <div class="panel__head">
+      <h2>Details</h2>
+      <p>Core metadata for this call record</p>
+    </div>
+    <dl class="facts-grid">
+      <div>
+        <dt>Created</dt>
+        <dd>{{ call.created_at|date:"Y-m-d H:i" }}</dd>
+      </div>
+      <div>
+        <dt>Language</dt>
+        <dd>{{ call.language_code|default:"-" }}</dd>
+      </div>
+      <div>
+        <dt>Model</dt>
+        <dd>{{ call.stt_model|default:"-" }}</dd>
+      </div>
+      <div>
+        <dt>Duration</dt>
+        <dd>{% if call.duration_seconds != None %}{{ call.duration_seconds }}s{% else %}-{% endif %}</dd>
+      </div>
+    </dl>
+  </article>
+
+  <article class="panel">
+    <div class="panel__head">
+      <h2>Executive Summary</h2>
+      <p>High-level synopsis without sensitive details</p>
+    </div>
+    <p>{{ executive_summary.short|default:"Summary unavailable." }}</p>
+    {% if executive_summary.bullets %}
+    <ul class="plain-list">
+      {% for item in executive_summary.bullets %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <p class="muted summary-privacy-note">Conversation-specific identifiers are intentionally omitted.</p>
+  </article>
+</section>
+
+<section id="quality" class="split reveal">
+  <article class="panel">
+    <div class="panel__head">
+      <h2>Quality Summary</h2>
+      <p>Sentiment and speaker confidence indicators</p>
+    </div>
+    <div class="sentiment-grid">
+      <div><span>Overall</span><strong>{{ analysis.sentiment.overall|default:"-" }}</strong></div>
+      <div><span>Customer</span><strong>{{ analysis.sentiment.customer|default:"-" }}</strong></div>
+      <div><span>Agent</span><strong>{{ analysis.sentiment.agent|default:"-" }}</strong></div>
+      <div><span>Confidence</span><strong>{{ analysis_meta.sentiment_confidence|default:"-" }}</strong></div>
+    </div>
+  </article>
+
+  <article class="panel">
+    <div class="panel__head">
+      <h2>Speaker Analytics</h2>
+      <p>Duration and word counts by speaker</p>
+    </div>
+    {% if speaker_stats %}
+    <div class="stats-table">
+      {% for stats in speaker_stats %}
+      <div class="stats-table__row">
+        <span class="mono">{{ stats.speaker }}</span>
+        <span>{{ stats.duration|floatformat:2 }}s</span>
+        <span>{{ stats.words }} words</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Speaker analytics not available.</p>
+    {% endif %}
+  </article>
+</section>
+
+<section id="transcript" class="panel transcript-workspace reveal">
+  <div class="card__head card__head--split">
+    <div>
+      <h2>Transcript</h2>
+      <p>Search transcript and inspect AI-generated insights.</p>
+    </div>
+    <label class="table-search">
+      <span>Search transcript</span>
+      <input type="search" data-transcript-search placeholder="Find phrase, keyword, or speaker..." />
+    </label>
+  </div>
+
+  <div class="transcript-layout">
+    <div class="transcript-column">
+      {% if transcript_segments %}
+      <ol class="transcript transcript--dense" data-transcript>
+        {% for segment in transcript_segments %}
+        <li class="transcript__segment" data-start="{{ segment.start }}" data-end="{{ segment.end }}" data-segment-index="{{ forloop.counter0 }}">
+          <span class="transcript__time">{{ segment.time }}</span>
+          <span class="transcript__speaker">{{ segment.speaker }}</span>
+          <span class="transcript__text">{{ segment.text }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+      {% elif transcript_render %}
+      <pre class="transcript transcript--plain">{{ transcript_render }}</pre>
+      {% else %}
+      <p class="muted">Transcript unavailable.</p>
+      {% endif %}
+    </div>
+
+    <aside class="insights-column">
+      <div class="insights-column__head">
+        <h3>AI Insights</h3>
+        <p>Topics, actions, Q&amp;A, and event timeline</p>
+      </div>
+
+      <div class="insights-tabs" data-insight-tabs>
+        <button type="button" class="is-active" data-insight-tab="topics">Topics</button>
+        <button type="button" data-insight-tab="actions">Actions</button>
+        <button type="button" data-insight-tab="qa">Q&amp;A</button>
+        <button type="button" data-insight-tab="events">Events</button>
+      </div>
+
+      <section class="insights-pane is-active" data-insight-pane="topics">
+        {% if call_experience.ai_insights.topics %}
+        <ul class="insight-topic-list">
+          {% for topic in call_experience.ai_insights.topics %}
+          <li>
+            <span>{{ topic.name }}</span>
+            <strong>{{ topic.count }}</strong>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="muted">No topics detected.</p>
+        {% endif %}
+      </section>
+
+      <section class="insights-pane" data-insight-pane="actions">
+        {% if call_experience.ai_insights.actions %}
+        <ul class="insight-action-list">
+          {% for action in call_experience.ai_insights.actions %}
+          <li>{{ action }}</li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="muted">No actions detected.</p>
+        {% endif %}
+      </section>
+
+      <section class="insights-pane" data-insight-pane="qa">
+        {% if call_experience.ai_insights.qa %}
+        <div class="insight-qa-list">
+          {% for item in call_experience.ai_insights.qa %}
+          <article>
+            <h4>Q: {{ item.question|default:"-" }}</h4>
+            <p>A: {{ item.answer|default:"-" }}</p>
+          </article>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="muted">No Q&amp;A pairs found.</p>
+        {% endif %}
+      </section>
+
+      <section class="insights-pane" data-insight-pane="events">
+        <div class="event-tabs" data-event-tabs>
+          <button type="button" class="is-active" data-event-filter="all">All</button>
+          <button type="button" data-event-filter="positive">Positive</button>
+          <button type="button" data-event-filter="negative">Negative</button>
+          <button type="button" data-event-filter="empathetic">Empathetic</button>
+          <button type="button" data-event-filter="unhelpful">Unhelpful</button>
+        </div>
+        <div class="event-list" data-event-list></div>
+      </section>
+    </aside>
+  </div>
+</section>
+
+<section id="audit" class="panel reveal">
+  <div class="panel__head">
+    <h2>Audit Trail</h2>
+    <p>Status timeline for this call</p>
+  </div>
+  <ul class="audit-list">
+    <li><strong>Created:</strong> {{ call.created_at|date:"Y-m-d H:i:s" }}</li>
+    <li><strong>Last update:</strong> {{ call.updated_at|date:"Y-m-d H:i:s" }}</li>
+    <li><strong>Current status:</strong> {{ call.status }}</li>
+    {% if call.error_message %}
+    <li><strong>Error:</strong> {{ call.error_message }}</li>
+    {% endif %}
+  </ul>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ call_experience|json_script:"call-experience-data" }}
+{% if call.status != 'completed' %}
+<script>
+  setTimeout(() => window.location.reload(), 8000);
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block page_title %}Call Operations Dashboard{% endblock %}
+{% block content %}
+<section class="stats-grid reveal">
+  <article class="metric-card">
+    <span>Total Calls</span>
+    <strong>{{ metrics.total }}</strong>
+  </article>
+  <article class="metric-card">
+    <span>Completed</span>
+    <strong>{{ metrics.completed }}</strong>
+  </article>
+  <article class="metric-card">
+    <span>Processing</span>
+    <strong>{{ metrics.processing }}</strong>
+  </article>
+  <article class="metric-card">
+    <span>Avg Duration</span>
+    <strong>{{ metrics.avg_duration|default:"0" }}s</strong>
+  </article>
+</section>
+
+<section class="dashboard-row reveal">
+  <article class="card widget-card">
+    <div class="card__head">
+      <h2>Processing Volume</h2>
+      <p>Last seven days</p>
+    </div>
+    <canvas id="volumeChart" height="220"></canvas>
+  </article>
+
+  <article class="card side-card">
+    <div class="card__head">
+      <h2>Quick Insights</h2>
+      <p>Snapshot from analyzed conversations</p>
+    </div>
+    <dl class="quick-insights">
+      <div>
+        <dt>Resolution rate</dt>
+        <dd>{{ insights.resolution_rate }}%</dd>
+      </div>
+      <div>
+        <dt>Agent talk ratio</dt>
+        <dd>{{ insights.agent.talk_ratio }}</dd>
+      </div>
+      <div>
+        <dt>Empathy score</dt>
+        <dd>{{ insights.agent.empathy }}</dd>
+      </div>
+      <div>
+        <dt>SLA breaches</dt>
+        <dd>{{ insights.sla_breaches }}</dd>
+      </div>
+    </dl>
+  </article>
+</section>
+
+<section class="card table-card reveal">
+  <div class="card__head card__head--split">
+    <div>
+      <h2>Calls Table</h2>
+      <p>{{ pagination.total_filtered }} filtered calls across {{ metrics.total_all }} total records</p>
+    </div>
+    <label class="table-search">
+      <span>Search in table</span>
+      <input type="search" data-table-search placeholder="Type to filter loaded rows..." />
+    </label>
+  </div>
+
+  <form class="server-filter" method="get">
+    <label>
+      <span>Server search</span>
+      <input type="text" name="q" value="{{ filters.q }}" placeholder="filename, id, model" />
+    </label>
+    <label>
+      <span>Status</span>
+      <select name="status">
+        <option value="all" {% if filters.status == 'all' %}selected{% endif %}>All</option>
+        <option value="queued" {% if filters.status == 'queued' %}selected{% endif %}>Queued</option>
+        <option value="processing" {% if filters.status == 'processing' %}selected{% endif %}>Processing</option>
+        <option value="completed" {% if filters.status == 'completed' %}selected{% endif %}>Completed</option>
+        <option value="failed" {% if filters.status == 'failed' %}selected{% endif %}>Failed</option>
+      </select>
+    </label>
+    <label>
+      <span>Role</span>
+      <select name="role">
+        <option value="" {% if not filters.role %}selected{% endif %}>Any</option>
+        <option value="Agent" {% if filters.role == 'Agent' %}selected{% endif %}>Agent</option>
+        <option value="Customer" {% if filters.role == 'Customer' %}selected{% endif %}>Customer</option>
+        <option value="Other" {% if filters.role == 'Other' %}selected{% endif %}>Other</option>
+      </select>
+    </label>
+    <label>
+      <span>Topic</span>
+      <input type="text" name="topic" value="{{ filters.topic }}" placeholder="refund, escalation" />
+    </label>
+    <label>
+      <span>Page size</span>
+      <select name="page_size">
+        {% for size in page_sizes %}
+        <option value="{{ size }}" {% if filters.page_size == size %}selected{% endif %}>{{ size }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn btn--ghost" type="submit">Apply Filters</button>
+  </form>
+
+  <form method="post" action="/calls/bulk" class="bulk-form">
+    {% csrf_token %}
+    <div class="bulk-toolbar">
+      <label class="bulk-toolbar__select-all">
+        <input type="checkbox" data-select-all />
+        <span>Select all rows</span>
+      </label>
+      <div class="bulk-toolbar__actions">
+        <select name="action" required>
+          <option value="" selected disabled>Bulk action</option>
+          <option value="export_json">Export JSON</option>
+          <option value="export_csv">Export CSV</option>
+          <option value="export_transcript_csv">Export transcript CSV</option>
+          <option value="reprocess">Reprocess</option>
+          <option value="delete">Delete</option>
+        </select>
+        <button class="btn btn-create" type="submit">Run</button>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="data-table" role="table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Call</th>
+            <th>Status</th>
+            <th>Progress</th>
+            <th>Duration</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in recent_calls %}
+          <tr data-call-id="{{ item.call.id }}" data-table-row>
+            <td>
+              <input type="checkbox" name="call_ids" value="{{ item.call.id }}" aria-label="Select {{ item.call.filename }}" />
+            </td>
+            <td>
+              <a href="/calls/{{ item.call.id }}" class="table-link">{{ item.call.filename }}</a>
+              <div class="row-meta">{{ item.call.id }}</div>
+              <div class="chips">
+                {% for topic in item.topics %}
+                <span class="chip">{{ topic }}</span>
+                {% endfor %}
+                {% for role in item.roles %}
+                <span class="chip chip--subtle">{{ role }}</span>
+                {% endfor %}
+                {% if item.sla_breach %}
+                <span class="chip chip--alert">SLA breach</span>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <span class="status status--{{ item.call.status }}" data-status>{{ item.call.status }}</span>
+            </td>
+            <td>
+              <div class="progress" data-progress="{{ item.progress }}">
+                <span class="progress__bar"></span>
+              </div>
+            </td>
+            <td>{% if item.call.duration_seconds != None %}{{ item.call.duration_seconds }}s{% else %}-{% endif %}</td>
+            <td>{{ item.call.created_at|date:"M d, H:i" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="table-empty">No calls match your current filters.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </form>
+
+  <nav class="pager" aria-label="Pagination">
+    {% if pagination.prev_url %}
+    <a href="{{ pagination.prev_url }}" class="btn btn--ghost">Previous</a>
+    {% endif %}
+    <span>Page {{ pagination.page }} of {{ pagination.total_pages }}</span>
+    {% if pagination.next_url %}
+    <a href="{{ pagination.next_url }}" class="btn btn--ghost">Next</a>
+    {% endif %}
+  </nav>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{{ chart_data|json_script:"chart-data" }}
+{{ insights|json_script:"insights-data" }}
+{% endblock %}

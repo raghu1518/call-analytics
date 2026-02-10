@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% load static %}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#2563ff" />
+    <title>{% if title %}{{ title }}{% else %}Call Analytics{% endif %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/app.css' %}" />
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Sidebar">
+        <a href="/" class="sidebar__brand" aria-label="Call Analytics Home">CA</a>
+        <nav class="sidebar__nav" aria-label="Primary">
+          <a
+            href="/"
+            class="sidebar__item {% if request.path == '/' or request.path|slice:':7' == '/calls/' %}is-active{% endif %}"
+            aria-current="{% if request.path == '/' or request.path|slice:':7' == '/calls/' %}page{% endif %}"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3.5 11.5L12 4l8.5 7.5M6.5 10.5V20h11V10.5" />
+            </svg>
+            <span class="sidebar__label">Home</span>
+          </a>
+          <a
+            href="/upload"
+            class="sidebar__item {% if request.path == '/upload' %}is-active{% endif %}"
+            aria-current="{% if request.path == '/upload' %}page{% endif %}"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15.5V4M7.5 8.5L12 4l4.5 4.5M4 19.5h16" />
+            </svg>
+            <span class="sidebar__label">Upload</span>
+          </a>
+        </nav>
+      </aside>
+
+      <div class="main-shell">
+        <header class="glass-nav">
+          <div class="glass-nav__left">
+            <h1 class="glass-nav__title">{% block page_title %}Dashboard{% endblock %}</h1>
+          </div>
+          <div class="glass-nav__right">
+            <span class="live-indicator" data-live-status>Live: connecting</span>
+            <nav class="glass-tabs" aria-label="Workspace tabs">
+              <a
+                href="/"
+                class="glass-tab {% if request.path == '/' or request.path|slice:':7' == '/calls/' %}is-active{% endif %}"
+                aria-current="{% if request.path == '/' or request.path|slice:':7' == '/calls/' %}page{% endif %}"
+              >Dashboard</a>
+              <a
+                href="/upload"
+                class="glass-tab {% if request.path == '/upload' %}is-active{% endif %}"
+                aria-current="{% if request.path == '/upload' %}page{% endif %}"
+              >Upload</a>
+            </nav>
+          </div>
+        </header>
+
+        <main id="content" class="content-space">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

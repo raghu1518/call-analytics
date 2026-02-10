@@ -1,0 +1,9 @@
+django
+pydantic-settings
+sarvamai
+requests
+pydub
+python-dateutil
+websocket-client
+websockets
+speexdsp-ns-vulcanlabs; platform_system == "Linux" or platform_system == "Darwin"
