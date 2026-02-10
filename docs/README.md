@@ -10,9 +10,6 @@ It supports:
 - Genesys AudioHook listener (listen-only dual-party call audio ingest)
 - Automated deployment scripts for Linux and Windows
 
-Companion Word guide:
-- `./Call_Analytics_Implementation_Guide.docx`
-
 ## Table of Contents
 - [1. Product Overview](#1-product-overview)
 - [2. Core Capabilities](#2-core-capabilities)
